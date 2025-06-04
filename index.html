@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modify Video Metadata</title>
+    <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.10.0/dist/ffmpeg.min.js"></script>
+</head>
+<body>
+    <input type="file" id="video-file" />
+    <button onclick="processVideo()">Change Metadata</button>
+
+    <script>
+      async function processVideo() {
+        const { createFFmpeg, fetchFile } = window.FFmpeg; // Access FFmpeg via window
+        const ffmpeg = createFFmpeg({ log: true });
+
+        // Load ffmpeg.wasm
+        await ffmpeg.load();
+
+        // Get the video file from the input
+        const file = document.getElementById('video-file').files[0];
+        if (!file) {
+          alert('Please select a video file');
+          return;
+        }
+
+        // Convert file to a format that ffmpeg can process
+        const fileData = await fetchFile(file);
+        ffmpeg.FS('writeFile', file.name, fileData);
+
+        // Modify metadata (example: change title)
+        await ffmpeg.run('-i', file.name, '-metadata', 'title=New Video Title', '-c', 'copy', 'output.mp4');
+
+        // Read the output file
+        const outputData = ffmpeg.FS('readFile', 'output.mp4');
+
+        // Create a Blob from the output data
+        const outputBlob = new Blob([outputData.buffer], { type: 'video/mp4' });
+
+        // Create a download link for the modified video
+        const downloadLink = document.createElement('a');
+        downloadLink.href = URL.createObjectURL(outputBlob);
+        downloadLink.download = 'modified_video.mp4';
+        downloadLink.click();
+      }
+    </script>
+</body>
+</html>
